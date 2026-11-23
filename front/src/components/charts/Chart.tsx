@@ -11,7 +11,7 @@ import {
 import { useTheme } from "../../hooks/useTheme";
 import { formatCurrency } from "../../utils/formatCurrency";
 import type { MonthPoint } from "../../utils/finance";
-import { CATEGORY_COLORS } from "../../utils/colors";
+import { categoryColor } from "../../utils/colors";
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip);
 
@@ -22,8 +22,8 @@ const tooltipBase = (isDark: boolean) => ({
     bodyColor: isDark ? "#cbd5e1" : "#475569",
     borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.08)",
     borderWidth: 1,
-    padding: 12,
-    cornerRadius: 12,
+    padding: 10,
+    cornerRadius: 6,
     boxPadding: 4,
     usePointStyle: true,
     titleFont: { family: "Inter", weight: 600 as const },
@@ -31,7 +31,7 @@ const tooltipBase = (isDark: boolean) => ({
 });
 
 interface DonutProps {
-    data: { categoryName: string; total: number }[];
+    data: { categoryId: number; categoryName: string; total: number }[];
     centerLabel: string;
     centerValue: string;
 }
@@ -45,11 +45,10 @@ export const DonutChart = ({ data, centerLabel, centerValue }: DonutProps) => {
         datasets: [
             {
                 data: data.map((d) => d.total),
-                backgroundColor: data.map((_, i) => CATEGORY_COLORS[i % CATEGORY_COLORS.length]),
+                backgroundColor: data.map((d) => categoryColor(d.categoryId)),
                 borderColor: isDark ? "#0f172a" : "#ffffff",
-                borderWidth: 3,
-                hoverOffset: 8,
-                borderRadius: 6,
+                borderWidth: 2,
+                hoverOffset: 4,
             },
         ],
     };
@@ -57,7 +56,7 @@ export const DonutChart = ({ data, centerLabel, centerValue }: DonutProps) => {
     const options: ChartOptions<"doughnut"> = {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: "72%",
+        cutout: "70%",
         animation: { animateRotate: true, duration: 1000, easing: "easeOutQuart" },
         plugins: {
             legend: { display: false },
@@ -79,7 +78,7 @@ export const DonutChart = ({ data, centerLabel, centerValue }: DonutProps) => {
             <Doughnut data={chartData} options={options} />
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-xs text-slate-400">{centerLabel}</span>
-                <span className="font-display text-lg font-bold text-slate-900 dark:text-white">{centerValue}</span>
+                <span className="text-base font-semibold text-slate-900 tabular-nums dark:text-white">{centerValue}</span>
             </div>
         </div>
     );
@@ -95,9 +94,9 @@ export const CashflowChart = ({ series }: { series: MonthPoint[] }) => {
             {
                 label: "Revenus",
                 data: series.map((p) => p.income),
-                backgroundColor: "#10b981",
-                hoverBackgroundColor: "#34d399",
-                borderRadius: 8,
+                backgroundColor: "#2a9d8f",
+                hoverBackgroundColor: "#238b7e",
+                borderRadius: 4,
                 borderSkipped: false as const,
                 barPercentage: 0.7,
                 categoryPercentage: 0.6,
@@ -105,9 +104,9 @@ export const CashflowChart = ({ series }: { series: MonthPoint[] }) => {
             {
                 label: "Dépenses",
                 data: series.map((p) => p.expense),
-                backgroundColor: "#7c6cf2",
-                hoverBackgroundColor: "#9b8ff5",
-                borderRadius: 8,
+                backgroundColor: isDark ? "#475569" : "#cbd5e1",
+                hoverBackgroundColor: isDark ? "#64748b" : "#94a3b8",
+                borderRadius: 4,
                 borderSkipped: false as const,
                 barPercentage: 0.7,
                 categoryPercentage: 0.6,

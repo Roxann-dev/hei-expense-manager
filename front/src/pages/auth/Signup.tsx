@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuthContext } from "../../context/AuthContext";
 import { signup } from "../../services/authService";
@@ -21,11 +20,11 @@ const strength = (pw: string) => {
 };
 
 const levels = [
-    { label: "Trop court", color: "bg-rose-500" },
-    { label: "Faible", color: "bg-rose-500" },
+    { label: "Trop court", color: "bg-red-500" },
+    { label: "Faible", color: "bg-red-500" },
     { label: "Moyen", color: "bg-amber-500" },
-    { label: "Bon", color: "bg-emerald-500" },
-    { label: "Excellent", color: "bg-emerald-500" },
+    { label: "Bon", color: "bg-teal-500" },
+    { label: "Excellent", color: "bg-teal-500" },
 ];
 
 const Signup: React.FC = () => {
@@ -51,7 +50,7 @@ const Signup: React.FC = () => {
         try {
             const res = await signup(email, password);
             setToken(res.data.token);
-            toast.success("Bienvenue sur CashFlow !");
+            toast.success("Compte créé");
             navigate("/dashboard");
         } catch (err) {
             setError(errorMessage(err, "L'inscription a échoué"));
@@ -61,7 +60,18 @@ const Signup: React.FC = () => {
     };
 
     return (
-        <AuthLayout title="Créer un compte" subtitle="Quelques secondes suffisent pour commencer à suivre votre budget.">
+        <AuthLayout
+            title="Créer un compte"
+            subtitle="Il vous faut seulement un email et un mot de passe."
+            footer={
+                <>
+                    Déjà inscrit ?{" "}
+                    <Link to="/login" className="font-medium text-slate-900 underline-offset-4 hover:underline dark:text-white">
+                        Se connecter
+                    </Link>
+                </>
+            }
+        >
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
                 <AnimatePresence>
                     {error && (
@@ -69,7 +79,7 @@ const Signup: React.FC = () => {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400"
+                            className="overflow-hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
                         >
                             {error}
                         </motion.p>
@@ -115,18 +125,11 @@ const Signup: React.FC = () => {
                     )}
                 </Field>
 
-                <Button type="submit" size="lg" loading={loading} className="group w-full">
-                    Créer mon compte
-                    {!loading && <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />}
+                <Button type="submit" size="lg" loading={loading} className="w-full">
+                    Créer le compte
                 </Button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                Déjà inscrit ?{" "}
-                <Link to="/login" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
-                    Se connecter
-                </Link>
-            </p>
         </AuthLayout>
     );
 };

@@ -11,7 +11,6 @@ export const errorMessage = (err: unknown, fallback = "Une erreur est survenue."
     return fallback;
 };
 
-/** Gère une erreur d'API : session expirée → déconnexion, sinon message toast. */
 export const useApiError = () => {
     const { logout } = useAuthContext();
     return useCallback(

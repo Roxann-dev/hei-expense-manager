@@ -24,7 +24,6 @@ export const setTheme = (theme: Theme) => {
         /* stockage indisponible : on garde juste le thème en mémoire */
     }
 
-    // Transition douce entre thèmes quand le navigateur le permet
     const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
     if (doc.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         doc.startViewTransition(apply);

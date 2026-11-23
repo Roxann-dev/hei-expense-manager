@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowDownLeft, FileDown, HandCoins, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { FileDown, HandCoins, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { deleteIncome, getIncomes, type IncomeResponse } from "../../services/incomeService";
 import { formatCurrency } from "../../utils/formatCurrency";
@@ -105,7 +105,7 @@ const Incomes: React.FC = () => {
         <div>
             <PageHeader
                 title="Revenus"
-                subtitle="Salaire, bourse, missions… tout ce qui rentre."
+                
                 actions={
                     <>
                         <Button variant="secondary" icon={<FileDown className="size-4" />} onClick={handleExport} disabled={!visible.length}>
@@ -119,33 +119,33 @@ const Incomes: React.FC = () => {
             />
 
             {!loading && incomes.length > 0 && (
-                <motion.div variants={listVariants} initial="hidden" animate="show" className="mb-5 grid gap-3 sm:grid-cols-3">
+                <motion.div variants={listVariants} initial="hidden" animate="show" className="mb-6 grid gap-3 sm:grid-cols-3">
                     <motion.div variants={itemVariants} className="card p-4">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Ce mois-ci</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Ce mois-ci</p>
                         <AnimatedNumber
                             value={stats.thisMonth}
                             format={formatCurrency}
-                            className="mt-1 block font-display text-xl font-bold text-emerald-600 dark:text-emerald-400"
+                            className="mt-1 block text-xl font-semibold text-slate-900 dark:text-white"
                         />
                     </motion.div>
                     <motion.div variants={itemVariants} className="card p-4">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total cumulé</p>
-                        <AnimatedNumber value={stats.total} format={formatCurrency} className="mt-1 block font-display text-xl font-bold text-slate-900 dark:text-white" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Total</p>
+                        <AnimatedNumber value={stats.total} format={formatCurrency} className="mt-1 block text-xl font-semibold text-slate-900 dark:text-white" />
                     </motion.div>
                     <motion.div variants={itemVariants} className="card p-4">
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Source principale</p>
-                        <p className="mt-1 truncate font-display text-xl font-bold text-slate-900 dark:text-white">{stats.top?.[0] ?? "—"}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Source principale</p>
+                        <p className="mt-1 truncate text-xl font-semibold text-slate-900 dark:text-white">{stats.top?.[0] ?? "—"}</p>
                     </motion.div>
                 </motion.div>
             )}
 
-            <div className="card mb-5 flex flex-col gap-3 p-3 sm:flex-row">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row">
                 <div className="relative flex-1">
                     <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400" />
                     <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Rechercher une source, une description…"
+                        placeholder="Rechercher"
                         className="field pl-10"
                         aria-label="Rechercher"
                     />
@@ -164,7 +164,7 @@ const Incomes: React.FC = () => {
                 <EmptyState
                     icon={<HandCoins className="size-6" />}
                     title="Aucun revenu"
-                    text="Enregistrez vos revenus pour calculer votre solde et votre taux d'épargne."
+                    text="Les revenus que vous ajoutez apparaîtront ici."
                     action={
                         <Button icon={<Plus className="size-4" />} onClick={openNew}>
                             Ajouter un revenu
@@ -174,7 +174,7 @@ const Incomes: React.FC = () => {
             ) : visible.length === 0 ? (
                 <EmptyState icon={<Search className="size-6" />} title="Aucun résultat" text="Aucun revenu ne correspond à votre recherche." />
             ) : (
-                <motion.ul variants={listVariants} initial="hidden" animate="show" className="space-y-2.5">
+                <motion.ul variants={listVariants} initial="hidden" animate="show" className="card divide-y divide-slate-100 overflow-hidden dark:divide-slate-800">
                     <AnimatePresence initial={false}>
                         {visible.map((i) => (
                             <motion.li
@@ -182,19 +182,16 @@ const Incomes: React.FC = () => {
                                 layout
                                 variants={itemVariants}
                                 exit="exit"
-                                className="card group flex items-center gap-4 p-4 transition-shadow hover:shadow-lg"
+                                className="group flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.02]"
                             >
-                                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                    <ArrowDownLeft className="size-5" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate font-semibold text-slate-800 dark:text-slate-100">{i.source}</p>
+                                                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{i.source}</p>
                                     <p className="mt-0.5 truncate text-xs text-slate-400">
                                         {formatDate(i.date)}
                                         {i.description ? ` · ${i.description}` : ""}
                                     </p>
                                 </div>
-                                <span className="font-display font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
+                                <span className="text-sm font-medium text-teal-700 tabular-nums dark:text-teal-400">
                                     +{formatCurrency(i.amount)}
                                 </span>
                                 <div className="flex items-center opacity-100 transition-opacity md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
@@ -213,7 +210,7 @@ const Incomes: React.FC = () => {
                                         onClick={() => setToDelete(i)}
                                         aria-label="Supprimer"
                                         title="Supprimer"
-                                        className="grid size-9 cursor-pointer place-items-center rounded-lg text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-500"
+                                        className="grid size-9 cursor-pointer place-items-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-500"
                                     >
                                         <Trash2 className="size-4" />
                                     </button>

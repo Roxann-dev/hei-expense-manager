@@ -64,25 +64,25 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, initialDat
                         autoFocus
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="field pr-10 font-display text-2xl font-bold"
+                        className="field pr-9 tabular-nums"
                         placeholder="0,00"
                     />
-                    <span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-lg font-semibold text-slate-400">€</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-sm text-slate-400">€</span>
                 </div>
             </Field>
 
             <Field label="Source" htmlFor="source" error={errors.source}>
-                <input id="source" value={source} onChange={(e) => setSource(e.target.value)} className="field" placeholder="Ex. Salaire" />
+                <input id="source" value={source} onChange={(e) => setSource(e.target.value)} className="field" placeholder="Salaire, bourse…" />
                 <div className="mt-2 flex flex-wrap gap-1.5">
                     {chips.map((c) => (
                         <button
                             key={c}
                             type="button"
                             onClick={() => setSource(c)}
-                            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
+                            className={`cursor-pointer rounded-md border px-2 py-0.5 text-xs transition ${
                                 source === c
-                                    ? "bg-emerald-500 text-white"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                                    ? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900"
+                                    : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
                             }`}
                         >
                             {c}

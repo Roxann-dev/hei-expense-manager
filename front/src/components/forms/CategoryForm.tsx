@@ -56,7 +56,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onSubmit, onCance
                             key={idea}
                             type="button"
                             onClick={() => setName(idea)}
-                            className="cursor-pointer rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-brand-500/10 hover:text-brand-600 dark:bg-white/5 dark:text-slate-300"
+                            className="cursor-pointer rounded-md border border-slate-200 px-2 py-0.5 text-xs text-slate-600 transition hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
                         >
                             {idea}
                         </button>

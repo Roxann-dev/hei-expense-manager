@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
 import Modal from "./Modal";
 import Button from "./Button";
 
@@ -27,12 +26,7 @@ const ConfirmDialog = ({ open, title, message, confirmLabel = "Supprimer", onCon
 
     return (
         <Modal open={open} onClose={onClose} title={title} size="sm">
-            <div className="mb-6 flex gap-3">
-                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-500/10 text-rose-500">
-                    <AlertTriangle className="size-5" />
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-300">{message}</p>
-            </div>
+            <p className="mb-6 text-sm text-slate-600 dark:text-slate-300">{message}</p>
             <div className="flex justify-end gap-2">
                 <Button variant="secondary" onClick={onClose}>
                     Annuler

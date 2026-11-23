@@ -10,7 +10,7 @@ export interface MonthPoint {
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 
-/** Une dépense compte-t-elle pour ce mois ? Même règle que le backend (budgetAlertService). */
+// Même règle que budgetAlertService côté backend : une récurrente compte chaque mois où elle est active.
 export const expenseHitsMonth = (e: Expense, start: Date, end: Date): boolean => {
     if (e.type === "ONE_TIME") {
         if (!e.date) return false;
@@ -40,7 +40,6 @@ export const monthlyTotals = (expenses: Expense[], incomes: IncomeResponse[], ye
     return { income, expense };
 };
 
-/** Les `count` derniers mois, du plus ancien au plus récent. */
 export const cashflowSeries = (expenses: Expense[], incomes: IncomeResponse[], count = 6): MonthPoint[] => {
     const now = new Date();
     const out: MonthPoint[] = [];
@@ -57,11 +56,9 @@ export const cashflowSeries = (expenses: Expense[], incomes: IncomeResponse[], c
     return out;
 };
 
-/** Variation en % entre deux valeurs, null si non calculable. */
 export const percentChange = (current: number, previous: number): number | null => {
     if (previous === 0) return null;
     return ((current - previous) / Math.abs(previous)) * 100;
 };
 
-/** Date de référence pour trier une dépense. */
 export const expenseDate = (e: Expense) => e.date ?? e.startDate ?? e.createdAt ?? "";

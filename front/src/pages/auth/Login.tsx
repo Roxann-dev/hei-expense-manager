@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight } from "lucide-react";
 import { useAuthContext } from "../../context/AuthContext";
 import { login } from "../../services/authService";
 import { loginSchema } from "../../utils/validators";
@@ -41,7 +40,18 @@ const Login = () => {
     };
 
     return (
-        <AuthLayout title="Bon retour 👋" subtitle="Connectez-vous pour retrouver votre tableau de bord.">
+        <AuthLayout
+            title="Connexion"
+            subtitle="Accédez à votre compte CashFlow."
+            footer={
+                <>
+                    Pas encore de compte ?{" "}
+                    <Link to="/signup" className="font-medium text-slate-900 underline-offset-4 hover:underline dark:text-white">
+                        Créer un compte
+                    </Link>
+                </>
+            }
+        >
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
                 <AnimatePresence>
                     {error && (
@@ -49,7 +59,7 @@ const Login = () => {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400"
+                            className="overflow-hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
                         >
                             {error}
                         </motion.p>
@@ -78,18 +88,11 @@ const Login = () => {
                     />
                 </Field>
 
-                <Button type="submit" size="lg" loading={loading} className="group w-full">
+                <Button type="submit" size="lg" loading={loading} className="w-full">
                     Se connecter
-                    {!loading && <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />}
                 </Button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                Pas encore de compte ?{" "}
-                <Link to="/signup" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
-                    Créer un compte
-                </Link>
-            </p>
         </AuthLayout>
     );
 };

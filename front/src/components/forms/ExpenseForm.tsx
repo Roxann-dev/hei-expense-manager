@@ -19,22 +19,21 @@ type ExpenseFormProps = {
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
-/** Sélecteur à deux options avec une pastille qui glisse. */
 const Segmented = ({ value, onChange }: { value: ExpenseTypeUI; onChange: (v: ExpenseTypeUI) => void }) => (
-    <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1 dark:bg-white/5">
+    <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
         {(["One-time", "Recurring"] as const).map((opt) => (
             <button
                 key={opt}
                 type="button"
                 onClick={() => onChange(opt)}
-                className={`relative cursor-pointer rounded-lg py-2 text-sm font-semibold transition-colors ${
+                className={`relative cursor-pointer rounded-md py-1.5 text-sm font-medium transition-colors ${
                     value === opt ? "text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                 }`}
             >
                 {value === opt && (
                     <motion.span
                         layoutId="expense-type-pill"
-                        className="absolute inset-0 rounded-lg bg-white shadow-sm dark:bg-slate-700"
+                        className="absolute inset-0 rounded-md bg-white shadow-sm dark:bg-slate-700"
                         transition={{ type: "spring", stiffness: 500, damping: 36 }}
                     />
                 )}
@@ -139,10 +138,10 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSuccess, onCancel, initialD
                         autoFocus
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="field pr-10 font-display text-2xl font-bold"
+                        className="field pr-9 tabular-nums"
                         placeholder="0,00"
                     />
-                    <span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-lg font-semibold text-slate-400">€</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-sm text-slate-400">€</span>
                 </div>
             </Field>
 
@@ -186,7 +185,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSuccess, onCancel, initialD
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     className="field"
-                    placeholder="Ex. Courses de la semaine"
+                    placeholder="Optionnel"
                 />
             </Field>
 
@@ -199,9 +198,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSuccess, onCancel, initialD
                     onChange={(e) => pickFile(e.target.files?.[0])}
                 />
                 {receiptFile ? (
-                    <div className="flex items-center gap-3 rounded-xl border border-brand-500/30 bg-brand-500/5 px-3.5 py-2.5">
-                        <Paperclip className="size-4 text-brand-500" />
-                        <span className="flex-1 truncate text-sm font-medium">{receiptFile.name}</span>
+                    <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                        <Paperclip className="size-4 text-slate-400" />
+                        <span className="flex-1 truncate text-sm">{receiptFile.name}</span>
                         <button
                             type="button"
                             onClick={() => setReceiptFile(null)}
@@ -225,17 +224,15 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSuccess, onCancel, initialD
                             setDragging(false);
                             pickFile(e.dataTransfer.files?.[0]);
                         }}
-                        className={`flex w-full cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed px-4 py-5 text-sm transition-colors ${
+                        className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-3 text-sm transition-colors ${
                             dragging
-                                ? "border-brand-400 bg-brand-500/5 text-brand-600"
-                                : "border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 dark:border-white/10 dark:text-slate-400"
+                                ? "border-slate-400 bg-slate-50 text-slate-700 dark:bg-slate-800"
+                                : "border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400"
                         }`}
                     >
-                        <FileUp className="size-5" />
-                        <span className="font-semibold">Glissez un fichier ou cliquez</span>
-                        <span className="text-xs text-slate-400">
-                            {initialData?.receiptPath ? "Un reçu est déjà joint · le remplacer" : "JPG, PNG ou PDF · 5 Mo max"}
-                        </span>
+                        <FileUp className="size-4" />
+                        <span>{initialData?.receiptPath ? "Remplacer le reçu" : "Joindre un fichier"}</span>
+                        <span className="text-xs text-slate-400">JPG, PNG, PDF · 5 Mo</span>
                     </button>
                 )}
             </Field>

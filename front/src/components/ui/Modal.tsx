@@ -30,7 +30,7 @@ const Modal = ({ open, onClose, title, description, children, size = "md" }: Mod
             {open && (
                 <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
                     <motion.div
-                        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+                        className="absolute inset-0 bg-slate-950/50"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -41,16 +41,16 @@ const Modal = ({ open, onClose, title, description, children, size = "md" }: Mod
                         role="dialog"
                         aria-modal="true"
                         aria-label={title}
-                        className={`relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl border border-slate-200/70 bg-white p-6 shadow-2xl
-                            sm:rounded-3xl dark:border-white/10 dark:bg-slate-900 ${size === "sm" ? "sm:max-w-sm" : "sm:max-w-lg"}`}
-                        initial={{ opacity: 0, y: 40, scale: 0.97 }}
+                        className={`relative max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-6 shadow-xl
+                            sm:rounded-xl dark:border-slate-800 dark:bg-slate-900 ${size === "sm" ? "sm:max-w-sm" : "sm:max-w-lg"}`}
+                        initial={{ opacity: 0, y: 8, scale: 0.99 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 24, scale: 0.98 }}
-                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.16, ease: "easeOut" }}
                     >
                         <div className="mb-5 flex items-start justify-between gap-4">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
+                                <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
                                 {description && <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{description}</p>}
                             </div>
                             <button

@@ -7,7 +7,6 @@ interface AnimatedNumberProps {
     className?: string;
 }
 
-/** Fait défiler un nombre jusqu'à sa valeur quand il devient visible. */
 const AnimatedNumber = ({ value, format, className }: AnimatedNumberProps) => {
     const ref = useRef<HTMLSpanElement>(null);
     const inView = useInView(ref, { once: true });

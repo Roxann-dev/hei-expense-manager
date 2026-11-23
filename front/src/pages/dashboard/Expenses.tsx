@@ -18,7 +18,7 @@ import Button from "../../components/ui/Button";
 import { ListSkeleton } from "../../components/ui/Loader";
 import { EmptyState, PageHeader } from "../../components/ui/PageHeader";
 import { itemVariants, listVariants } from "../../utils/motion";
-import { CATEGORY_COLORS } from "../../utils/colors";
+import { categoryColor } from "../../utils/colors";
 
 type TypeFilter = "ALL" | "ONE_TIME" | "RECURRING";
 type Sort = "date-desc" | "date-asc" | "amount-desc" | "amount-asc";
@@ -29,7 +29,7 @@ const IconBtn = ({ label, onClick, children, danger }: { label: string; onClick:
         aria-label={label}
         title={label}
         className={`grid size-9 cursor-pointer place-items-center rounded-lg text-slate-400 transition ${
-            danger ? "hover:bg-rose-500/10 hover:text-rose-500" : "hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+            danger ? "hover:bg-red-500/10 hover:text-red-500" : "hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
         }`}
     >
         {children}
@@ -75,12 +75,6 @@ const Expenses: React.FC = () => {
             setParams(params, { replace: true });
         }
     }, [params, setParams]);
-
-    const colorOf = useMemo(() => {
-        const map = new Map<number, string>();
-        categories.forEach((c, i) => map.set(c.id, CATEGORY_COLORS[i % CATEGORY_COLORS.length]));
-        return (id: number) => map.get(id) ?? CATEGORY_COLORS[9];
-    }, [categories]);
 
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -143,7 +137,7 @@ const Expenses: React.FC = () => {
         <div>
             <PageHeader
                 title="Dépenses"
-                subtitle="Toutes vos sorties d'argent, ponctuelles ou récurrentes."
+                
                 actions={
                     <>
                         <Button variant="secondary" icon={<FileDown className="size-4" />} onClick={handleExport} disabled={!visible.length}>
@@ -156,21 +150,20 @@ const Expenses: React.FC = () => {
                 }
             />
 
-            {/* Barre de filtres */}
-            <div className="card mb-5 flex flex-col gap-3 p-3 md:flex-row md:items-center">
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
                 <div className="relative flex-1">
                     <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-slate-400" />
                     <input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Rechercher une description, une catégorie…"
+                        placeholder="Rechercher"
                         className="field pl-10"
                         aria-label="Rechercher"
                     />
                 </div>
                 <div className="grid grid-cols-3 gap-2 md:flex">
                     <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="field cursor-pointer md:w-44" aria-label="Catégorie">
-                        <option value="ALL">Toutes catégories</option>
+                        <option value="ALL">Catégorie</option>
                         {categories.map((c) => (
                             <option key={c.id} value={c.id}>
                                 {c.name}
@@ -178,7 +171,7 @@ const Expenses: React.FC = () => {
                         ))}
                     </select>
                     <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)} className="field cursor-pointer md:w-36" aria-label="Type">
-                        <option value="ALL">Tous types</option>
+                        <option value="ALL">Type</option>
                         <option value="ONE_TIME">Ponctuelles</option>
                         <option value="RECURRING">Récurrentes</option>
                     </select>
@@ -202,7 +195,7 @@ const Expenses: React.FC = () => {
                                     setCatFilter("ALL");
                                     setTypeFilter("ALL");
                                 }}
-                                className="ml-2 inline-flex cursor-pointer items-center gap-1 font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                                className="ml-2 inline-flex cursor-pointer items-center gap-1 text-slate-900 underline underline-offset-4 dark:text-white"
                             >
                                 <X className="size-3" /> Effacer les filtres
                             </button>
@@ -220,7 +213,7 @@ const Expenses: React.FC = () => {
                 <EmptyState
                     icon={<Receipt className="size-6" />}
                     title="Aucune dépense"
-                    text="Ajoutez votre première dépense pour commencer à suivre votre budget."
+                    text="Les dépenses que vous ajoutez apparaîtront ici."
                     action={
                         <Button icon={<Plus className="size-4" />} onClick={openNew}>
                             Ajouter une dépense
@@ -230,32 +223,28 @@ const Expenses: React.FC = () => {
             ) : visible.length === 0 ? (
                 <EmptyState icon={<Search className="size-6" />} title="Aucun résultat" text="Aucune dépense ne correspond à ces filtres." />
             ) : (
-                <motion.ul variants={listVariants} initial="hidden" animate="show" className="space-y-2.5">
+                <motion.ul variants={listVariants} initial="hidden" animate="show" className="card divide-y divide-slate-100 overflow-hidden dark:divide-slate-800">
                     <AnimatePresence initial={false}>
                         {visible.map((e) => {
-                            const color = colorOf(e.categoryId);
+                            const color = categoryColor(e.categoryId);
                             return (
                                 <motion.li
                                     key={e.id}
                                     layout
                                     variants={itemVariants}
                                     exit="exit"
-                                    className="card group flex items-center gap-4 p-4 transition-shadow hover:shadow-lg"
+                                    className="group flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.02]"
                                 >
                                     <div
-                                        className="grid size-11 shrink-0 place-items-center rounded-xl font-display text-sm font-bold"
-                                        style={{ background: `${color}1f`, color }}
-                                    >
-                                        {(e.category?.name ?? "?").slice(0, 2).toUpperCase()}
-                                    </div>
+                                        className="h-8 w-1 shrink-0 rounded-full"
+                                        style={{ background: color }}
+                                    />
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate font-semibold text-slate-800 dark:text-slate-100">
+                                        <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
                                             {e.description || e.category?.name || "Dépense"}
                                         </p>
                                         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
-                                            <span className="font-medium" style={{ color }}>
-                                                {e.category?.name}
-                                            </span>
+                                            <span>{e.category?.name}</span>
                                             <span>·</span>
                                             {e.type === "RECURRING" ? (
                                                 <span className="inline-flex items-center gap-1">
@@ -267,13 +256,13 @@ const Expenses: React.FC = () => {
                                                 <span>{formatDate(e.date)}</span>
                                             )}
                                             {e.receiptPath && (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 dark:bg-white/5">
-                                                    <Receipt className="size-3" /> Reçu
+                                                <span className="inline-flex items-center gap-1" title="Reçu joint">
+                                                    <Receipt className="size-3" /> reçu
                                                 </span>
                                             )}
                                         </div>
                                     </div>
-                                    <span className="font-display font-bold text-slate-900 tabular-nums dark:text-white">
+                                    <span className="text-sm font-medium text-slate-900 tabular-nums dark:text-white">
                                         −{formatCurrency(e.amount)}
                                     </span>
                                     <div className="flex items-center opacity-100 transition-opacity md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
@@ -311,8 +300,7 @@ const Expenses: React.FC = () => {
                 open={formOpen}
                 onClose={() => setFormOpen(false)}
                 title={editing ? "Modifier la dépense" : "Nouvelle dépense"}
-                description={editing ? undefined : "Renseignez le montant, la date et la catégorie."}
-            >
+                            >
                 <ExpenseForm
                     key={editing?.id ?? "new"}
                     initialData={editing}

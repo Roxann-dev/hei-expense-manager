@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { CalendarDays, LogOut, Mail, Moon, Pencil, ShieldCheck } from "lucide-react";
+import { LogOut, Mail, Pencil, ShieldCheck } from "lucide-react";
 import { toast } from "react-toastify";
 import { loadProfile, updateProfile } from "../../services/profileService";
 import { useAuthContext } from "../../context/AuthContext";
@@ -70,26 +70,24 @@ const Profiles = () => {
     const stats = [
         { label: "Dépenses", value: user?.expenses?.length ?? 0 },
         { label: "Revenus", value: user?.incomes?.length ?? 0 },
-        { label: "Catégories perso", value: user?.categories?.length ?? 0 },
+        { label: "Catégories", value: user?.categories?.length ?? 0 },
     ];
 
     return (
-        <div className="mx-auto max-w-3xl">
-            <PageHeader title="Profil" subtitle="Vos informations et vos préférences." />
+        <div className="max-w-2xl">
+            <PageHeader title="Profil" />
 
             <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-4">
-                {/* Carte d'identité */}
-                <motion.section variants={itemVariants} className="card relative overflow-hidden p-6">
-                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-brand-500/20 via-fuchsia-500/10 to-amber-400/20" />
-                    <div className="relative flex flex-col items-center gap-4 pt-6 text-center sm:flex-row sm:items-end sm:text-left">
-                        <div className="grid size-20 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 to-rose-400 font-display text-3xl font-extrabold text-white uppercase shadow-xl ring-4 ring-white dark:ring-slate-900">
+                <motion.section variants={itemVariants} className="card p-5">
+                    <div className="flex items-center gap-4">
+                        <div className="grid size-12 shrink-0 place-items-center rounded-full bg-slate-200 text-lg font-semibold text-slate-700 uppercase dark:bg-slate-800 dark:text-slate-200">
                             {user?.email?.[0] ?? "?"}
                         </div>
-                        <div className="flex-1">
+                        <div className="min-w-0 flex-1">
                             {user ? (
                                 <>
-                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{user.email.split("@")[0]}</h2>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+                                    <h2 className="truncate font-medium text-slate-900 dark:text-white">{user.email}</h2>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">Inscrit le {formatDate(user.createdAt)}</p>
                                 </>
                             ) : (
                                 <div className="space-y-2">
@@ -105,19 +103,18 @@ const Profiles = () => {
                         )}
                     </div>
 
-                    <div className="relative mt-6 grid grid-cols-3 gap-3">
+                    <div className="mt-5 grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 pt-4 dark:divide-slate-800 dark:border-slate-800">
                         {stats.map((s) => (
-                            <div key={s.label} className="rounded-xl bg-slate-50 p-3 text-center dark:bg-white/[0.03]">
-                                <p className="font-display text-xl font-bold text-slate-900 dark:text-white">{s.value}</p>
+                            <div key={s.label} className="px-3 first:pl-0">
+                                <p className="text-lg font-semibold text-slate-900 tabular-nums dark:text-white">{s.value}</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
                             </div>
                         ))}
                     </div>
                 </motion.section>
 
-                {/* Informations / édition */}
-                <motion.section variants={itemVariants} className="card p-6">
-                    <h3 className="mb-4 font-bold text-slate-900 dark:text-white">Informations du compte</h3>
+                <motion.section variants={itemVariants} className="card p-5">
+                    <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">Compte</h3>
                     <AnimatePresence mode="wait" initial={false}>
                         {editing ? (
                             <motion.div
@@ -159,12 +156,11 @@ const Profiles = () => {
                                 {[
                                     { icon: Mail, label: "Email", value: user?.email ?? "…" },
                                     { icon: ShieldCheck, label: "Mot de passe", value: "••••••••••" },
-                                    { icon: CalendarDays, label: "Membre depuis", value: formatDate(user?.createdAt) },
                                 ].map(({ icon: Icon, label, value }) => (
                                     <div key={label} className="flex items-center gap-3 py-3">
                                         <Icon className="size-4 text-slate-400" />
                                         <dt className="flex-1 text-sm text-slate-500 dark:text-slate-400">{label}</dt>
-                                        <dd className="text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</dd>
+                                        <dd className="text-sm text-slate-800 dark:text-slate-100">{value}</dd>
                                     </div>
                                 ))}
                             </motion.dl>
@@ -172,22 +168,17 @@ const Profiles = () => {
                     </AnimatePresence>
                 </motion.section>
 
-                {/* Préférences */}
-                <motion.section variants={itemVariants} className="card p-6">
-                    <h3 className="mb-4 font-bold text-slate-900 dark:text-white">Préférences</h3>
+                <motion.section variants={itemVariants} className="card p-5">
+                    <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">Affichage</h3>
                     <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-brand-500/10 text-brand-500">
-                            <Moon className="size-4" />
-                        </div>
                         <div className="flex-1">
-                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Mode sombre</p>
-                            <p className="text-xs text-slate-400">Plus doux pour les yeux le soir.</p>
+                            <p className="text-sm text-slate-800 dark:text-slate-100">Mode sombre</p>
                         </div>
                         <DarkModeSwitch />
                     </div>
                 </motion.section>
 
-                <motion.div variants={itemVariants} className="flex justify-center pt-2">
+                <motion.div variants={itemVariants} className="pt-2">
                     <Button
                         variant="ghost"
                         icon={<LogOut className="size-4" />}
@@ -195,7 +186,7 @@ const Profiles = () => {
                             logout();
                             navigate("/login");
                         }}
-                        className="text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 dark:text-rose-400"
+                        className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
                     >
                         Se déconnecter
                     </Button>

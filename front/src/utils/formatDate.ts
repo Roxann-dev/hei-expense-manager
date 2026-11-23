@@ -11,7 +11,6 @@ export const formatDate = (dateString: string | undefined | null): string => {
     });
 };
 
-/** Convertit une date ISO du serveur en valeur pour <input type="date"> (AAAA-MM-JJ). */
 export const toInputDate = (dateString: string | undefined | null): string => {
     if (!dateString) return "";
     return dateString.slice(0, 10);

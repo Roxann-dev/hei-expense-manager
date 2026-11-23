@@ -13,7 +13,7 @@ import Button from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Loader";
 import { EmptyState, PageHeader } from "../../components/ui/PageHeader";
 import { itemVariants, listVariants } from "../../utils/motion";
-import { CATEGORY_COLORS } from "../../utils/colors";
+import { categoryColor } from "../../utils/colors";
 
 interface Category {
     id: number;
@@ -80,7 +80,7 @@ const Categories: React.FC = () => {
         <div>
             <PageHeader
                 title="Catégories"
-                subtitle="Organisez vos dépenses pour voir où part votre argent."
+                subtitle="Les catégories par défaut ne peuvent pas être modifiées."
                 actions={
                     <Button icon={<Plus className="size-4" />} onClick={openNew}>
                         Nouvelle catégorie
@@ -89,16 +89,16 @@ const Categories: React.FC = () => {
             />
 
             {loading ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {Array.from({ length: 6 }).map((_, i) => (
-                        <Skeleton key={i} className="h-36 rounded-2xl" />
+                        <Skeleton key={i} className="h-36 rounded-xl" />
                     ))}
                 </div>
             ) : categories.length === 0 ? (
                 <EmptyState
                     icon={<Shapes className="size-6" />}
                     title="Aucune catégorie"
-                    text="Créez des catégories comme « Courses » ou « Transport » pour classer vos dépenses."
+                    text="Créez une catégorie pour classer vos dépenses."
                     action={
                         <Button icon={<Plus className="size-4" />} onClick={openNew}>
                             Créer une catégorie
@@ -106,34 +106,29 @@ const Categories: React.FC = () => {
                     }
                 />
             ) : (
-                <motion.ul variants={listVariants} initial="hidden" animate="show" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <motion.ul variants={listVariants} initial="hidden" animate="show" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <AnimatePresence initial={false}>
-                        {categories.map((c, i) => {
-                            const color = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
+                        {categories.map((c) => {
+                            const color = categoryColor(c.id);
                             const u = usage.get(c.id);
                             return (
                                 <motion.li
                                     key={c.id}
                                     layout
                                     variants={itemVariants}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    whileHover={{ y: -4 }}
-                                    className="card group relative overflow-hidden p-5"
+                                    exit={{ opacity: 0 }}
+                                    className="card group p-4"
                                 >
-                                    <div
-                                        className="absolute -top-8 -right-8 size-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40"
-                                        style={{ background: color }}
-                                    />
-                                    <div className="relative flex items-start justify-between">
+                                    <div className="flex items-center justify-between">
                                         <div
-                                            className="grid size-11 place-items-center rounded-xl font-display text-sm font-bold"
-                                            style={{ background: `${color}1f`, color }}
+                                            className="flex items-center gap-2"
                                         >
-                                            {c.name.slice(0, 2).toUpperCase()}
+                                            <span className="size-2.5 rounded-sm" style={{ background: color }} />
+                                            <h3 className="truncate text-sm font-medium text-slate-900 dark:text-white">{c.name}</h3>
                                         </div>
                                         {c.isDefault ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500 dark:bg-white/5 dark:text-slate-400">
-                                                <Lock className="size-3" /> Par défaut
+                                            <span className="inline-flex items-center gap-1 text-xs text-slate-400" title="Catégorie par défaut, non modifiable">
+                                                <Lock className="size-3" /> Défaut
                                             </span>
                                         ) : (
                                             <div className="flex opacity-100 transition-opacity md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
@@ -150,24 +145,24 @@ const Categories: React.FC = () => {
                                                 <button
                                                     onClick={() => setToDelete(c)}
                                                     aria-label={`Supprimer ${c.name}`}
-                                                    className="grid size-8 cursor-pointer place-items-center rounded-lg text-slate-400 hover:bg-rose-500/10 hover:text-rose-500"
+                                                    className="grid size-8 cursor-pointer place-items-center rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-500"
                                                 >
                                                     <Trash2 className="size-4" />
                                                 </button>
                                             </div>
                                         )}
                                     </div>
-                                    <h3 className="relative mt-4 truncate font-bold text-slate-900 dark:text-white">{c.name}</h3>
-                                    <p className="relative text-xs text-slate-400">
-                                        {u.count} dépense{u.count > 1 ? "s" : ""} · {formatCurrency(u.total)}
+                                    <p className="mt-3 text-lg font-semibold text-slate-900 tabular-nums dark:text-white">{formatCurrency(u.total)}</p>
+                                    <p className="text-xs text-slate-400">
+                                        {u.count} dépense{u.count > 1 ? "s" : ""}
                                     </p>
-                                    <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/5">
+                                    <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                         <motion.div
                                             className="h-full rounded-full"
                                             style={{ background: color }}
                                             initial={{ width: 0 }}
                                             animate={{ width: `${(u.total / usage.max) * 100}%` }}
-                                            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.1 + i * 0.03 }}
+                                            transition={{ duration: 0.5, ease: "easeOut" }}
                                         />
                                     </div>
                                 </motion.li>

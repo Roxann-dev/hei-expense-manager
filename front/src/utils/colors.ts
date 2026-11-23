@@ -1,13 +1,15 @@
-/** Palette catégorielle lisible en clair comme en sombre. */
-export const CATEGORY_COLORS = [
-    "#7c6cf2", // violet
-    "#22b8a7", // turquoise
-    "#f59e0b", // ambre
-    "#f43f5e", // rose
-    "#3b82f6", // bleu
-    "#a3c93a", // lime
-    "#ec4899", // magenta
-    "#14b8e6", // ciel
-    "#f97316", // orange
-    "#94a3b8", // ardoise (« autres »)
+const PALETTE = [
+    "#3b6fd4",
+    "#e9a23b",
+    "#d1495b",
+    "#8a6fb3",
+    "#5c9e4b",
+    "#c06c3e",
+    "#4a90a4",
+    "#b0688f",
 ];
+
+export const OTHER_COLOR = "#a0a7b4";
+
+// Couleur dérivée de l'id : une catégorie garde la même couleur sur toutes les pages.
+export const categoryColor = (id: number) => (id < 0 ? OTHER_COLOR : PALETTE[id % PALETTE.length]);
