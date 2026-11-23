@@ -1,295 +1,255 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { FileUp, Paperclip, X } from "lucide-react";
+import { toast } from "react-toastify";
 import { createExpense, updateExpense } from "../../services/expenseService";
-import { getCategories } from "../../services/ccategoryService";
-import { uploadReceipt } from "../../services/receiptService"; 
-import type { CreateExpenseDTO, ExpenseTypeUI, Expense } from "../../services/expenseService";
+import type { CreateExpenseDTO, Expense, ExpenseTypeUI } from "../../services/expenseService";
+import { uploadReceipt } from "../../services/receiptService";
+import { toInputDate, todayInput } from "../../utils/formatDate";
+import { errorMessage } from "../../hooks/useApiError";
+import Button from "../ui/Button";
+import Field from "../ui/Input";
 
 type ExpenseFormProps = {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  initialData?: Expense | null;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+    initialData?: Expense | null;
+    categories: { id: number; name: string }[];
 };
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSuccess, onCancel, initialData }) => {
-  const [amount, setAmount] = useState<number>(initialData?.amount || 0);
-  const [date, setDate] = useState<string>(initialData?.date || "");
-  const [categoryId, setCategoryId] = useState<string>(
-    initialData?.categoryId ? initialData.categoryId.toString() : ""
-  );
-  const [description, setDescription] = useState<string>(initialData?.description || "");
-  const [type, setType] = useState<ExpenseTypeUI>(
-    initialData?.type === "RECURRING" ? "Recurring" : "One-time"
-  );
-  const [startDate, setStartDate] = useState<string>(initialData?.startDate || "");
-  const [endDate, setEndDate] = useState<string>(initialData?.endDate || "");
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isEditMode, setIsEditMode] = useState<boolean>(!!initialData?.id);
+const MAX_SIZE = 5 * 1024 * 1024;
 
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+/** Sélecteur à deux options avec une pastille qui glisse. */
+const Segmented = ({ value, onChange }: { value: ExpenseTypeUI; onChange: (v: ExpenseTypeUI) => void }) => (
+    <div className="grid grid-cols-2 rounded-xl bg-slate-100 p-1 dark:bg-white/5">
+        {(["One-time", "Recurring"] as const).map((opt) => (
+            <button
+                key={opt}
+                type="button"
+                onClick={() => onChange(opt)}
+                className={`relative cursor-pointer rounded-lg py-2 text-sm font-semibold transition-colors ${
+                    value === opt ? "text-slate-900 dark:text-white" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                }`}
+            >
+                {value === opt && (
+                    <motion.span
+                        layoutId="expense-type-pill"
+                        className="absolute inset-0 rounded-lg bg-white shadow-sm dark:bg-slate-700"
+                        transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                    />
+                )}
+                <span className="relative">{opt === "One-time" ? "Ponctuelle" : "Récurrente"}</span>
+            </button>
+        ))}
+    </div>
+);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await getCategories();
-        setCategories(data);
-      } catch (err) {
-        console.error("❌ Failed to load categories:", err);
-        alert("Impossible de charger les catégories. Veuillez réessayer.");
-      } finally {
-        setLoadingCategories(false);
-      }
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSuccess, onCancel, initialData, categories }) => {
+    const isEdit = !!initialData?.id;
+    const [amount, setAmount] = useState<string>(initialData ? String(initialData.amount) : "");
+    const [type, setType] = useState<ExpenseTypeUI>(initialData?.type === "RECURRING" ? "Recurring" : "One-time");
+    const [date, setDate] = useState(toInputDate(initialData?.date) || todayInput());
+    const [startDate, setStartDate] = useState(toInputDate(initialData?.startDate) || todayInput());
+    const [endDate, setEndDate] = useState(toInputDate(initialData?.endDate));
+    const [categoryId, setCategoryId] = useState(initialData?.categoryId ? String(initialData.categoryId) : "");
+    const [description, setDescription] = useState(initialData?.description || "");
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [dragging, setDragging] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!categoryId && categories.length === 1) setCategoryId(String(categories[0].id));
+    }, [categories, categoryId]);
+
+    const pickFile = (f: File | undefined | null) => {
+        if (!f) return;
+        if (!/\.(jpe?g|png|pdf)$/i.test(f.name)) return toast.error("Format accepté : JPG, PNG ou PDF");
+        if (f.size > MAX_SIZE) return toast.error("Fichier trop lourd (5 Mo maximum)");
+        setReceiptFile(f);
     };
 
-    loadCategories();
-  }, []);
+    const validate = () => {
+        const e: Record<string, string> = {};
+        const n = parseFloat(amount);
+        if (!n || n <= 0) e.amount = "Saisissez un montant positif";
+        if (!categoryId) e.categoryId = "Choisissez une catégorie";
+        if (type === "One-time" && !date) e.date = "Choisissez une date";
+        if (type === "Recurring" && !startDate) e.startDate = "Choisissez une date de début";
+        if (type === "Recurring" && endDate && endDate < startDate) e.endDate = "La fin doit être après le début";
+        setErrors(e);
+        return Object.keys(e).length === 0;
+    };
 
-  useEffect(() => {
-    if (initialData) {
-      setAmount(initialData.amount);
-      setDate(initialData.date || "");
-      setCategoryId(initialData.categoryId.toString());
-      setDescription(initialData.description || "");
-      setType(initialData.type === "RECURRING" ? "Recurring" : "One-time");
-      setStartDate(initialData.startDate || "");
-      setEndDate(initialData.endDate || "");
-      setIsEditMode(!!initialData.id);
-    } else {
-      setAmount(0);
-      setDate("");
-      setCategoryId("");
-      setDescription("");
-      setType("One-time");
-      setStartDate("");
-      setEndDate("");
-      setReceiptFile(null);
-      setIsEditMode(false);
-    }
-  }, [initialData]);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!validate()) return;
+        setLoading(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+        const data: CreateExpenseDTO = {
+            amount: parseFloat(amount),
+            type,
+            date: type === "One-time" ? date : undefined,
+            startDate: type === "Recurring" ? startDate : undefined,
+            endDate: type === "Recurring" && endDate ? endDate : undefined,
+            categoryId: parseInt(categoryId, 10),
+            description,
+        };
 
-    try {
-      if (type === "One-time" && !date) {
-        alert("Please select a date for one-time expense.");
-        setLoading(false);
-        return;
-      }
-
-      if (type === "Recurring" && !startDate) {
-        alert("Please select a start date for recurring expense.");
-        setLoading(false);
-        return;
-      }
-
-      if (!categoryId || isNaN(parseInt(categoryId, 10))) {
-        alert("Please select a valid category.");
-        setLoading(false);
-        return;
-      }
-
-      const expenseData: CreateExpenseDTO = {
-        amount,
-        type,
-        date: type === "One-time" ? date : undefined,
-        startDate: type === "Recurring" ? startDate : undefined,
-        endDate: type === "Recurring" && endDate ? endDate : undefined,
-        categoryId: parseInt(categoryId, 10),
-        description,
-      };
-
-      let expense;
-
-      if (isEditMode && initialData?.id) {
-        expense = await updateExpense(initialData.id, {
-          ...expenseData,
-          type: expenseData.type === "One-time" ? "ONE_TIME" : "RECURRING",
-        });
-        alert("✅ Expense updated!");
-      } else {
-        expense = await createExpense(expenseData);
-        alert("✅ Expense added!");
-      }
-
-      if (receiptFile && expense?.id) {
         try {
-          await uploadReceipt(expense.id, receiptFile);
-          alert("✅ Receipt uploaded!");
-        } catch (uploadError) {
-          alert(
-            "❌ Failed to upload receipt: " +
-              (uploadError instanceof Error ? uploadError.message : "Unknown error")
-          );
+            const saved =
+                isEdit && initialData?.id
+                    ? await updateExpense(initialData.id, { ...data, type: type === "One-time" ? "ONE_TIME" : "RECURRING" })
+                    : await createExpense(data);
+
+            if (receiptFile && saved?.id) {
+                try {
+                    await uploadReceipt(saved.id, receiptFile);
+                } catch (err) {
+                    toast.warn(`Dépense enregistrée, mais le reçu n'a pas pu être envoyé : ${errorMessage(err)}`);
+                }
+            }
+            toast.success(isEdit ? "Dépense mise à jour" : "Dépense ajoutée");
+            onSuccess?.();
+        } catch (err) {
+            toast.error(errorMessage(err, "Impossible d'enregistrer la dépense"));
+        } finally {
+            setLoading(false);
         }
-      }
+    };
 
-      if (!isEditMode) {
-        setAmount(0);
-        setDate("");
-        setCategoryId("");
-        setDescription("");
-        setType("One-time");
-        setStartDate("");
-        setEndDate("");
-        setReceiptFile(null);
-      }
+    const reveal = {
+        initial: { opacity: 0, height: 0 },
+        animate: { opacity: 1, height: "auto" },
+        exit: { opacity: 0, height: 0 },
+        transition: { duration: 0.22 },
+    };
 
-      onSuccess?.();
-    } catch (error: unknown) {
-      let message = "Failed to save expense.";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      console.error("❌ Erreur lors de la sauvegarde:", error);
-      alert("❌ " + message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return (
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <Field label="Montant" htmlFor="amount" error={errors.amount}>
+                <div className="relative">
+                    <input
+                        id="amount"
+                        type="number"
+                        inputMode="decimal"
+                        min="0.01"
+                        step="0.01"
+                        autoFocus
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="field pr-10 font-display text-2xl font-bold"
+                        placeholder="0,00"
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-lg font-semibold text-slate-400">€</span>
+                </div>
+            </Field>
 
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-md mx-auto bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg space-y-5 border border-gray-200 dark:border-slate-600"
-    >
-      <h2 className="text-xl font-bold text-green-700 dark:text-green-400 text-center">
-        {isEditMode ? "Modifier Dépense" : "Nouvelle Dépense"}
-      </h2>
+            <Field label="Type">
+                <Segmented value={type} onChange={setType} />
+            </Field>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Montant</label>
-        <input
-          type="number"
-          value={amount || ""}
-          onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : 0)}
-          className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-          required
-          min="0.01"
-          step="0.01"
-        />
-      </div>
+            <AnimatePresence initial={false} mode="popLayout">
+                {type === "One-time" ? (
+                    <motion.div key="one" {...reveal} className="overflow-hidden">
+                        <Field label="Date" htmlFor="date" error={errors.date}>
+                            <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field" />
+                        </Field>
+                    </motion.div>
+                ) : (
+                    <motion.div key="rec" {...reveal} className="grid grid-cols-2 gap-3 overflow-hidden">
+                        <Field label="Début" htmlFor="start" error={errors.startDate}>
+                            <input id="start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="field" />
+                        </Field>
+                        <Field label="Fin (optionnel)" htmlFor="end" error={errors.endDate}>
+                            <input id="end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="field" />
+                        </Field>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
+            <Field label="Catégorie" htmlFor="category" error={errors.categoryId}>
+                <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="field cursor-pointer">
+                    <option value="">Choisir une catégorie…</option>
+                    {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name}
+                        </option>
+                    ))}
+                </select>
+            </Field>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Type</label>
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as ExpenseTypeUI)}
-          className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-        >
-          <option value="One-time">One-time</option>
-          <option value="Recurring">Recurring</option>
-        </select>
-      </div>
+            <Field label="Description" htmlFor="desc">
+                <input
+                    id="desc"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="field"
+                    placeholder="Ex. Courses de la semaine"
+                />
+            </Field>
 
-      {type === "One-time" && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-            required
-          />
-        </div>
-      )}
+            <Field label="Reçu (optionnel)">
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    className="hidden"
+                    onChange={(e) => pickFile(e.target.files?.[0])}
+                />
+                {receiptFile ? (
+                    <div className="flex items-center gap-3 rounded-xl border border-brand-500/30 bg-brand-500/5 px-3.5 py-2.5">
+                        <Paperclip className="size-4 text-brand-500" />
+                        <span className="flex-1 truncate text-sm font-medium">{receiptFile.name}</span>
+                        <button
+                            type="button"
+                            onClick={() => setReceiptFile(null)}
+                            aria-label="Retirer le fichier"
+                            className="cursor-pointer rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10"
+                        >
+                            <X className="size-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragging(true);
+                        }}
+                        onDragLeave={() => setDragging(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDragging(false);
+                            pickFile(e.dataTransfer.files?.[0]);
+                        }}
+                        className={`flex w-full cursor-pointer flex-col items-center gap-1 rounded-xl border-2 border-dashed px-4 py-5 text-sm transition-colors ${
+                            dragging
+                                ? "border-brand-400 bg-brand-500/5 text-brand-600"
+                                : "border-slate-200 text-slate-500 hover:border-brand-300 hover:text-brand-600 dark:border-white/10 dark:text-slate-400"
+                        }`}
+                    >
+                        <FileUp className="size-5" />
+                        <span className="font-semibold">Glissez un fichier ou cliquez</span>
+                        <span className="text-xs text-slate-400">
+                            {initialData?.receiptPath ? "Un reçu est déjà joint · le remplacer" : "JPG, PNG ou PDF · 5 Mo max"}
+                        </span>
+                    </button>
+                )}
+            </Field>
 
-      {type === "Recurring" && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">End Date (Optional)</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-            />
-          </div>
-        </>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Catégorie</label>
-        {loadingCategories ? (
-          <p className="text-gray-500 dark:text-slate-400">Chargement...</p>
-        ) : (
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-            required
-          >
-            <option value="">-- Sélectionnez une catégorie --</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Description</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-          placeholder="Optional"
-        />
-      </div>
-
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-          Receipt (JPG, PNG, PDF, max 5MB) — Optional
-        </label>
-        <input
-          type="file"
-          accept=".jpg,.jpeg,.png,.pdf"
-          onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-          className="w-full border border-green-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-        />
-        {receiptFile && (
-          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
-            Selected: {receiptFile.name}
-          </p>
-        )}
-      </div>
-
-      <div className="flex space-x-4">
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-yellow-400 text-green-900 rounded-lg py-2 hover:bg-yellow-500 disabled:bg-gray-400 font-semibold transition shadow-sm"
-        >
-          {loading ? "Saving..." : isEditMode ? "Update Expense" : "Save Expense"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-slate-100 rounded-lg py-2 hover:bg-gray-400 dark:hover:bg-slate-500 font-semibold transition shadow-sm"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
+            <div className="flex gap-2 pt-2">
+                <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
+                    Annuler
+                </Button>
+                <Button type="submit" loading={loading} className="flex-1">
+                    {isEdit ? "Enregistrer" : "Ajouter"}
+                </Button>
+            </div>
+        </form>
+    );
 };
 
 export default ExpenseForm;
-

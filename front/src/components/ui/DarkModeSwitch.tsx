@@ -1,107 +1,54 @@
-import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from "motion/react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "../../hooks/useTheme";
 
-export const DarkModeSwitch = () => {
-  const [isChecked, setIsChecked] = useState(false);
-
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    
-    if (savedTheme === 'dark') {
-      setIsChecked(true);
-      document.documentElement.classList.add('dark');
-    } else if (savedTheme === 'light') {
-      setIsChecked(false);
-      document.documentElement.classList.remove('dark');
-    } else {
-
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsChecked(prefersDark);
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-      }
-    }
-  }, []);
-
-  const handleCheckboxChange = () => {
-    const newValue = !isChecked;
-    setIsChecked(newValue);
-
-    if (newValue) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
-
-  return (
-    <label 
-      className="flex cursor-pointer select-none items-center"
-      aria-label={`Basculer vers le mode ${isChecked ? 'light' : 'dark'}`}
-    >
-      <div className="relative">
-        <input
-          type="checkbox"
-          checked={isChecked}
-          onChange={handleCheckboxChange}
-          className="sr-only"
-          aria-describedby="theme-toggle-description"
-        />
-        <div 
-          className={`block h-8 w-14 rounded-full transition-colors duration-300 ease-in-out ${
-            isChecked ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
-          }`}
-        ></div>
-        <div
-          className={`dot absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-lg transition-transform duration-300 ease-in-out ${
-            isChecked ? 'translate-x-6' : 'translate-x-0'
-          }`}
+/** Bouton rond qui bascule entre clair et sombre, avec une icône qui pivote. */
+export const ThemeToggle = ({ className = "" }: { className?: string }) => {
+    const { isDark, toggle } = useTheme();
+    return (
+        <button
+            onClick={toggle}
+            aria-label={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
+            className={`relative grid size-10 cursor-pointer place-items-center overflow-hidden rounded-xl text-slate-500 transition
+                hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white ${className}`}
         >
-
-          <div className="flex items-center justify-center h-full w-full text-xs">
-            {isChecked ? (
-              <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-              </svg>
-            )}
-          </div>
-        </div>
-      </div>
-      <span id="theme-toggle-description" className="sr-only">
-        Basculer entre le mode clair et dark
-      </span>
-    </label>
-  );
+            <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                    key={isDark ? "moon" : "sun"}
+                    initial={{ rotate: -90, scale: 0.4, opacity: 0 }}
+                    animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                    exit={{ rotate: 90, scale: 0.4, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    {isDark ? <Moon className="size-5" /> : <Sun className="size-5" />}
+                </motion.span>
+            </AnimatePresence>
+        </button>
+    );
 };
 
-
-export const useDarkMode = () => {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) {
-      return saved === 'dark';
-    }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  const toggleDarkMode = () => {
-    const newValue = !isDark;
-    setIsDark(newValue);
-    
-    if (newValue) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
-
-  return { isDark, toggleDarkMode };
+/** Interrupteur clair / sombre, utilisé dans le profil. */
+export const DarkModeSwitch = () => {
+    const { isDark, toggle } = useTheme();
+    return (
+        <button
+            role="switch"
+            aria-checked={isDark}
+            aria-label="Mode sombre"
+            onClick={toggle}
+            className={`relative flex h-7 w-12 cursor-pointer items-center rounded-full p-1 transition-colors duration-300 ${
+                isDark ? "bg-brand-500" : "bg-slate-300"
+            }`}
+        >
+            <motion.span
+                layout
+                transition={{ type: "spring", stiffness: 600, damping: 32 }}
+                className={`grid size-5 place-items-center rounded-full bg-white shadow ${isDark ? "ml-auto" : ""}`}
+            >
+                {isDark ? <Moon className="size-3 text-brand-600" /> : <Sun className="size-3 text-amber-500" />}
+            </motion.span>
+        </button>
+    );
 };
+
+export default DarkModeSwitch;

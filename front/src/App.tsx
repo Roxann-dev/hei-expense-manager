@@ -1,56 +1,62 @@
-import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
+import { useTheme } from "./hooks/useTheme";
 
+import { lazy, type JSX } from "react";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import NotFound from "./pages/NotFound";
+import Navbar from "./components/layout/Navbar";
 
-import Summary from "./pages/dashboard/Dashboard";
-import Category from "./pages/dashboard/Categories";
-import type { JSX } from "react";
-import Navbar from './components/layout/Navbar';
-import Expenses from './pages/dashboard/Expenses';
-import NotFound from './pages/NotFound';
-import Incomes from './pages/dashboard/Incomes';
-import Profiles from './pages/dashboard/Profiles';
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const Categories = lazy(() => import("./pages/dashboard/Categories"));
+const Expenses = lazy(() => import("./pages/dashboard/Expenses"));
+const Incomes = lazy(() => import("./pages/dashboard/Incomes"));
+const Profiles = lazy(() => import("./pages/dashboard/Profiles"));
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-    const {token} = useAuthContext();
-    return token ? children : <Navigate to="/login" />;
-}
+    const { token } = useAuthContext();
+    return token ? children : <Navigate to="/login" replace />;
+};
+
+const GuestRoute = ({ children }: { children: JSX.Element }) => {
+    const { token } = useAuthContext();
+    return token ? <Navigate to="/dashboard" replace /> : children;
+};
 
 function App() {
+    const { theme } = useTheme();
     return (
         <AuthProvider>
             <Router>
                 <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                    <Route path="/signup" element={<GuestRoute><Signup /></GuestRoute>} />
 
                     <Route
-                        path='/'
+                        path="/"
                         element={
                             <ProtectedRoute>
                                 <Navbar />
                             </ProtectedRoute>
                         }
                     >
-                        <Route index element={<Summary />} />
-                        <Route path="dashboard" element={<Summary />} />
-                        <Route path="categories" element={<Category />} />
+                        <Route index element={<Navigate to="/dashboard" replace />} />
+                        <Route path="dashboard" element={<Dashboard />} />
+                        <Route path="categories" element={<Categories />} />
                         <Route path="expenses" element={<Expenses />} />
-                        <Route path="incomes" element={<Incomes/>}/>
-                        <Route path="profile" element={<Profiles/>}/>
-                       
+                        <Route path="incomes" element={<Incomes />} />
+                        <Route path="profile" element={<Profiles />} />
                     </Route>
 
-                   
                     <Route path="*" element={<NotFound />} />
                 </Routes>
             </Router>
+            <ToastContainer position="bottom-right" autoClose={2500} hideProgressBar newestOnTop theme={theme} />
         </AuthProvider>
     );
 }
-
 
 export default App;

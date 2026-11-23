@@ -1,155 +1,114 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { toast } from "react-toastify";
 import { createIncome, updateIncome } from "../../services/incomeService";
 import type { IncomeInput, IncomeResponse } from "../../services/incomeService";
+import { toInputDate, todayInput } from "../../utils/formatDate";
+import { errorMessage } from "../../hooks/useApiError";
+import Button from "../ui/Button";
+import Field from "../ui/Input";
 
 type IncomeFormProps = {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  initialData?: IncomeResponse | null;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+    initialData?: IncomeResponse | null;
+    suggestions?: string[];
 };
 
-const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, initialData }) => {
-  const [amount, setAmount] = useState<number>(initialData?.amount || 0);
-  const [date, setDate] = useState<string>(initialData?.date || "");
-  const [source, setSource] = useState<string>(initialData?.source || "");
-  const [description, setDescription] = useState<string>(initialData?.description || "");
-  const [loading, setLoading] = useState(false);
-  const [isEditMode, setIsEditMode] = useState<boolean>(!!initialData?.id);
+const DEFAULT_SOURCES = ["Salaire", "Freelance", "Bourse", "Aide familiale", "Vente"];
 
-  useEffect(() => {
-    if (initialData) {
-      setAmount(initialData.amount);
-      setDate(initialData.date);
-      setSource(initialData.source);
-      setDescription(initialData.description || "");
-      setIsEditMode(!!initialData.id);
-    } else {
-      setAmount(0);
-      setDate("");
-      setSource("");
-      setDescription("");
-      setIsEditMode(false);
-    }
-  }, [initialData]);
+const IncomeForm: React.FC<IncomeFormProps> = ({ onSuccess, onCancel, initialData, suggestions = [] }) => {
+    const isEdit = !!initialData?.id;
+    const [amount, setAmount] = useState(initialData ? String(initialData.amount) : "");
+    const [date, setDate] = useState(toInputDate(initialData?.date) || todayInput());
+    const [source, setSource] = useState(initialData?.source || "");
+    const [description, setDescription] = useState(initialData?.description || "");
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+    const chips = Array.from(new Set([...suggestions, ...DEFAULT_SOURCES])).slice(0, 6);
 
-    try {
-      if (!amount || !date || !source) {
-        alert("Amount, date, and source are required.");
-        setLoading(false);
-        return;
-      }
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const errs: Record<string, string> = {};
+        const n = parseFloat(amount);
+        if (!n || n <= 0) errs.amount = "Saisissez un montant positif";
+        if (!date) errs.date = "Choisissez une date";
+        if (!source.trim()) errs.source = "Indiquez la provenance";
+        setErrors(errs);
+        if (Object.keys(errs).length) return;
 
-      const incomeData: IncomeInput = {
-        amount,
-        date,
-        source,
-        description: description || undefined,
-      };
+        const data: IncomeInput = { amount: n, date, source: source.trim(), description: description || undefined };
+        setLoading(true);
+        try {
+            if (isEdit && initialData?.id) await updateIncome(initialData.id, data);
+            else await createIncome(data);
+            toast.success(isEdit ? "Revenu mis à jour" : "Revenu ajouté");
+            onSuccess?.();
+        } catch (err) {
+            toast.error(errorMessage(err, "Impossible d'enregistrer le revenu"));
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      if (isEditMode && initialData?.id) {
-        await updateIncome(initialData.id, incomeData);
-        alert("✅ Income updated!");
-      } else {
-        await createIncome(incomeData);
-        alert("✅ Income added!");
-      }
+    return (
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <Field label="Montant" htmlFor="amount" error={errors.amount}>
+                <div className="relative">
+                    <input
+                        id="amount"
+                        type="number"
+                        inputMode="decimal"
+                        min="0.01"
+                        step="0.01"
+                        autoFocus
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="field pr-10 font-display text-2xl font-bold"
+                        placeholder="0,00"
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-4 grid place-items-center text-lg font-semibold text-slate-400">€</span>
+                </div>
+            </Field>
 
-      if (!isEditMode) {
-        setAmount(0);
-        setDate("");
-        setSource("");
-        setDescription("");
-      }
+            <Field label="Source" htmlFor="source" error={errors.source}>
+                <input id="source" value={source} onChange={(e) => setSource(e.target.value)} className="field" placeholder="Ex. Salaire" />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {chips.map((c) => (
+                        <button
+                            key={c}
+                            type="button"
+                            onClick={() => setSource(c)}
+                            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                source === c
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                            }`}
+                        >
+                            {c}
+                        </button>
+                    ))}
+                </div>
+            </Field>
 
-      onSuccess?.();
-    } catch (error: unknown) {
-      let message = "Failed to save income.";
-      if (error instanceof Error) message = error.message;
-      console.error("❌ Erreur lors de la sauvegarde:", error);
-      alert("❌ " + message);
-    } finally {
-      setLoading(false);
-    }
-  };
+            <Field label="Date" htmlFor="date" error={errors.date}>
+                <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field" />
+            </Field>
 
-  return (
-      <form
-          onSubmit={handleSubmit}
-          className="max-w-md mx-auto bg-white dark:bg-slate-700 dark:border-slate-600 p-6 rounded-2xl shadow-lg space-y-5"
-      >
-          <h2 className="text-2xl font-bold text-green-700 dark:text-slate-100 text-center mb-4">
-              {isEditMode ? "Edit Income" : "Add Income"}
-          </h2>
+            <Field label="Description" htmlFor="desc">
+                <input id="desc" value={description} onChange={(e) => setDescription(e.target.value)} className="field" placeholder="Optionnel" />
+            </Field>
 
-          <div>
-              <label className="block text-sm font-semibold text-green-700 dark:text-slate-400 mb-1">Amount</label>
-              <input
-                  type="number"
-                  value={amount || ""}
-                  onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : 0)}
-                  className="w-full border border-green-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-                  required
-                  min="0.01"
-                  step="0.01"
-              />
-          </div>
-
-          <div>
-              <label className="block text-sm font-semibold text-green-700 dark:text-slate-400 mb-1">Date</label>
-              <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full border border-green-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-                  required
-              />
-          </div>
-
-          <div>
-              <label className="block text-sm font-semibold text-green-700 dark:text-slate-400 mb-1">Source</label>
-              <input
-                  type="text"
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                  className="w-full border border-green-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-                  placeholder="e.g., Salary, Freelance"
-                  required
-              />
-          </div>
-
-          <div>
-              <label className="block text-sm font-semibold text-green-700 dark:text-slate-400 mb-1">Description</label>
-              <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full border border-green-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-                  placeholder="Optional"
-              />
-          </div>
-
-          <div className="flex gap-4">
-              <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full cursor-pointer bg-yellow-400 text-green-900  font-bold py-2 rounded-lg hover:bg-yellow-500 transition shadow-md"
-              >
-                  {loading ? "Saving..." : isEditMode ? "Update Income" : "Save Income"}
-              </button>
-              <button
-                  type="button"
-                  onClick={onCancel}
-                  className="w-full cursor-pointer bg-gray-200 text-gray-800 py-2 rounded-lg hover:bg-gray-300 transition shadow-sm"
-              >
-                  Cancel
-              </button>
-          </div>
-      </form>
-
-  );
+            <div className="flex gap-2 pt-2">
+                <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
+                    Annuler
+                </Button>
+                <Button type="submit" loading={loading} className="flex-1">
+                    {isEdit ? "Enregistrer" : "Ajouter"}
+                </Button>
+            </div>
+        </form>
+    );
 };
 
 export default IncomeForm;

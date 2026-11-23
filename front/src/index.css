@@ -1,1 +1,81 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: oklch(0.97 0.02 285);
+  --color-brand-100: oklch(0.94 0.04 285);
+  --color-brand-200: oklch(0.88 0.08 285);
+  --color-brand-300: oklch(0.79 0.13 285);
+  --color-brand-400: oklch(0.69 0.18 285);
+  --color-brand-500: oklch(0.6 0.21 285);
+  --color-brand-600: oklch(0.53 0.22 285);
+  --color-brand-700: oklch(0.46 0.2 285);
+  --color-brand-800: oklch(0.38 0.16 285);
+  --color-brand-900: oklch(0.3 0.12 285);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-slate-50 font-sans text-slate-800 dark:bg-slate-950 dark:text-slate-100;
+  }
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+  ::selection {
+    @apply bg-brand-500/25;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-slate-200/70 bg-white/80 shadow-[0_1px_2px_rgb(15_23_42/0.04),0_8px_24px_-12px_rgb(15_23_42/0.12)] backdrop-blur-sm
+      dark:border-white/[0.06] dark:bg-slate-900/70 dark:shadow-none;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400
+      transition-[border-color,box-shadow] duration-200 outline-none
+      focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15
+      dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-brand-400;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400;
+  }
+
+  .skeleton {
+    @apply animate-shimmer rounded-lg bg-[linear-gradient(90deg,var(--color-slate-200)_25%,var(--color-slate-100)_50%,var(--color-slate-200)_75%)] bg-[length:200%_100%]
+      dark:bg-[linear-gradient(90deg,var(--color-slate-800)_25%,var(--color-slate-700)_50%,var(--color-slate-800)_75%)];
+  }
+}
+
+/* Toasts */
+.Toastify__toast {
+  @apply rounded-xl font-sans text-sm shadow-lg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

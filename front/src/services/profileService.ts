@@ -5,6 +5,6 @@ const API_URL = `${import.meta.env.VITE_API_URL}/api/user`
 export const loadProfile = (token: string) =>
     axios.get(`${API_URL}/profile`, { headers: { Authorization: `Bearer ${token}` } });
 
-export const updateProfile = (token: string, data: any) =>
+export const updateProfile = (token: string, data: { email?: string; password?: string }) =>
     axios.put(`${API_URL}/profile`,data, { headers: { Authorization: `Bearer ${token}` } });
 

@@ -1,8 +1,14 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowRight } from "lucide-react";
 import { useAuthContext } from "../../context/AuthContext";
 import { login } from "../../services/authService";
 import { loginSchema } from "../../utils/validators";
+import { errorMessage } from "../../hooks/useApiError";
+import Button from "../../components/ui/Button";
+import Field from "../../components/ui/Input";
+import AuthLayout, { PasswordInput } from "./AuthLayout";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -10,70 +16,81 @@ const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
+        const parsed = loginSchema.safeParse({ email, password });
+        if (!parsed.success) {
+            setError(parsed.error.issues[0]?.message ?? "Champs invalides");
+            return;
+        }
+
+        setLoading(true);
         try {
-            loginSchema.parse({ email, password });
             const res = await login(email, password);
             setToken(res.data.token);
             navigate("/dashboard");
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Invalid credentials");
+        } catch (err) {
+            setError(errorMessage(err, "Email ou mot de passe incorrect"));
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 space-y-6">
-                <h2 className="text-3xl font-bold text-gray-800 text-center">Login</h2>
+        <AuthLayout title="Bon retour 👋" subtitle="Connectez-vous pour retrouver votre tableau de bord.">
+            <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+                <AnimatePresence>
+                    {error && (
+                        <motion.p
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-600 dark:text-rose-400"
+                        >
+                            {error}
+                        </motion.p>
+                    )}
+                </AnimatePresence>
 
-                {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                <Field label="Email" htmlFor="email">
+                    <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="field"
+                        placeholder="vous@exemple.com"
+                    />
+                </Field>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div>
-                        <label className="block text-gray-700 font-semibold mb-1">Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-                            placeholder="you@example.com"
-                        />
-                    </div>
+                <Field label="Mot de passe" htmlFor="password">
+                    <PasswordInput
+                        id="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Votre mot de passe"
+                    />
+                </Field>
 
-                    <div>
-                        <label className="block text-gray-700 font-semibold mb-1">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-                            placeholder="Your password"
-                        />
-                    </div>
+                <Button type="submit" size="lg" loading={loading} className="group w-full">
+                    Se connecter
+                    {!loading && <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />}
+                </Button>
+            </form>
 
-                    <button
-                        type="submit"
-                        className="w-full py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                        Login
-                    </button>
-                </form>
-
-                <p className="text-center text-sm text-gray-700">
-                    Don't have an account?{" "}
-                    <span
-                        className="text-amber-500 cursor-pointer hover:underline"
-                        onClick={() => navigate("/signup")}
-                    >
-          Sign up
-        </span>
-                </p>
-            </div>
-        </div>
+            <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                Pas encore de compte ?{" "}
+                <Link to="/signup" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">
+                    Créer un compte
+                </Link>
+            </p>
+        </AuthLayout>
     );
 };
 

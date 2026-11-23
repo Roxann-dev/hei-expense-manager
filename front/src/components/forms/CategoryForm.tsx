@@ -1,85 +1,77 @@
-import { useState, useEffect } from 'react';
-import { createCategory, updateCategory } from '../../services/ccategoryService.ts';
-
-interface Category {
-    id?: number;
-    name: string;
-    userId?: number | null;
-    isDefault?: boolean;
-    createdAt?: string;
-}
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { createCategory, updateCategory } from "../../services/ccategoryService.ts";
+import { errorMessage } from "../../hooks/useApiError";
+import Button from "../ui/Button";
+import Field from "../ui/Input";
 
 interface CategoryFormProps {
-    category: Category | null;
+    category: { id?: number; name: string } | null;
     onSubmit: () => void;
     onCancel: () => void;
 }
 
+const IDEAS = ["Transport", "Loyer", "Loisirs", "Santé", "Abonnements", "Études"];
+
 const CategoryForm: React.FC<CategoryFormProps> = ({ category, onSubmit, onCancel }) => {
-    const [name, setName] = useState(category?.name || '');
-    const [error, setError] = useState<string | null>(null);
+    const [name, setName] = useState(category?.name || "");
+    const [error, setError] = useState<string>();
+    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (category) {
-            setName(category.name);
-        } else {
-            setName('');
-        }
-    }, [category]);
-
-    const handleSubmit = async () => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name.trim()) return setError("Donnez un nom à la catégorie");
+        setLoading(true);
         try {
-            if (category?.id) {
-                await updateCategory(category.id, name);
-            } else {
-                await createCategory(name);
-            }
-            setError(null);
+            if (category?.id) await updateCategory(category.id, name.trim());
+            else await createCategory(name.trim());
+            toast.success(category?.id ? "Catégorie renommée" : "Catégorie créée");
             onSubmit();
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError('Une erreur inconnue est survenue');
-            }
+        } catch (err) {
+            setError(errorMessage(err));
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="w-full bg-white dark:bg-slate-700 dark:border-slate-600 p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
-                {category?.id ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
-            </h3>
-            {error && (
-                <p className="text-red-700 bg-red-50 border border-red-200 rounded p-3 mb-4">
-                    {error}
-                </p>
-            )}
-            <div className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <Field label="Nom" htmlFor="cat-name" error={error}>
                 <input
-                    type="text"
+                    id="cat-name"
+                    autoFocus
                     value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Nom de la catégorie"
-                    className="w-full p-3 border border-gray-200 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-amber-400 transition"
+                    onChange={(e) => {
+                        setName(e.target.value);
+                        setError(undefined);
+                    }}
+                    placeholder="Ex. Courses"
+                    className="field"
                 />
-
-                <div className="flex justify-end space-x-3">
-                    <button
-                        onClick={handleSubmit}
-                        className="bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600 transition font-semibold shadow-sm"
-                    >
-                        {category?.id ? 'Enregistrer' : 'Ajouter'}
-                    </button>
-                    <button
-                        onClick={onCancel}
-                        className="bg-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-400 transition font-semibold shadow-sm"
-                    >
-                        Annuler
-                    </button>
+            </Field>
+            {!category?.id && (
+                <div className="flex flex-wrap gap-1.5">
+                    {IDEAS.map((idea) => (
+                        <button
+                            key={idea}
+                            type="button"
+                            onClick={() => setName(idea)}
+                            className="cursor-pointer rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-brand-500/10 hover:text-brand-600 dark:bg-white/5 dark:text-slate-300"
+                        >
+                            {idea}
+                        </button>
+                    ))}
                 </div>
+            )}
+            <div className="flex gap-2 pt-2">
+                <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
+                    Annuler
+                </Button>
+                <Button type="submit" loading={loading} className="flex-1">
+                    {category?.id ? "Enregistrer" : "Créer"}
+                </Button>
             </div>
-        </div>
+        </form>
     );
 };
 

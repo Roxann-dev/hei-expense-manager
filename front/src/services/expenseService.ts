@@ -10,7 +10,9 @@ export type Expense = {
   categoryId: number;
   description?: string;
   type: ExpenseTypeAPI;
+  receiptPath?: string | null;
   createdAt?: string;
+  category?: { id: number; name: string };
 };
 
 export type CreateExpenseDTO = {

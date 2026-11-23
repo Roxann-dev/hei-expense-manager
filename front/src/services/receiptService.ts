@@ -51,6 +51,5 @@ export const getReceiptViewUrl = (expenseId: number): string => {
     throw new Error("NO_TOKEN");
   }
   const url = `/api/receipts/${expenseId}/view?token=${encodeURIComponent(token)}`;
-  console.log("🔗 URL générée :", url);
   return url;
 };
